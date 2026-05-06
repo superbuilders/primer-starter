@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import Image from "next/image";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,7 +20,21 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en" className={`${geistSans.variable} h-full antialiased`}>
-			<body className="flex min-h-full flex-col bg-background text-foreground">{children}</body>
+			<body className="flex min-h-full flex-col bg-background text-foreground">
+				<header className="flex items-center gap-3 border-b border-border px-6 py-4">
+					<Image
+						src="/primer-blackbg-icon.png"
+						alt="Primer"
+						width={32}
+						height={32}
+						className="rounded-md"
+						priority
+						unoptimized
+					/>
+					<span className="text-lg font-semibold tracking-tight">Primer</span>
+				</header>
+				{children}
+			</body>
 		</html>
 	);
 }
