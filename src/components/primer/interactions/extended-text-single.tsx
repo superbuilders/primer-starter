@@ -1,5 +1,3 @@
-"use client";
-
 import type { ExtendedTextSingleState } from "@superbuilders/primer-tives/client";
 import { useState } from "react";
 

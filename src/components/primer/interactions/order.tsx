@@ -1,5 +1,3 @@
-"use client";
-
 import type { OrderState } from "@superbuilders/primer-tives/client";
 import { useMemo, useState } from "react";
 

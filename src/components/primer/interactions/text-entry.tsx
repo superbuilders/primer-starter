@@ -1,5 +1,3 @@
-"use client";
-
 import type { TextEntryState } from "@superbuilders/primer-tives/client";
 import { useState } from "react";
 

@@ -1,5 +1,4 @@
 import { inlinesToPlainText, type RendererStimulus } from "@superbuilders/primer-tives/contracts";
-import Image from "next/image";
 
 interface StimulusProps {
 	stimulus: RendererStimulus | null;
@@ -11,14 +10,11 @@ export function Stimulus({ stimulus }: StimulusProps) {
 		case "image":
 			return (
 				<div className="flex justify-center">
-					<div className="relative aspect-video w-full max-w-md overflow-hidden rounded-xl border border-border bg-muted/30">
-						<Image
+					<div className="aspect-video w-full max-w-md overflow-hidden rounded-xl border border-border bg-muted/30">
+						<img
 							src={stimulus.src}
 							alt={inlinesToPlainText(stimulus.alt)}
-							fill
-							sizes="(min-width: 448px) 448px, 100vw"
-							className="object-contain"
-							unoptimized
+							className="h-full w-full object-contain"
 						/>
 					</div>
 				</div>

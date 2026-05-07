@@ -1,5 +1,3 @@
-"use client";
-
 import type { PciInteractionState } from "@superbuilders/primer-tives/client";
 import type {
 	FractionInputProps,

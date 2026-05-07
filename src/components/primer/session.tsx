@@ -1,5 +1,3 @@
-"use client";
-
 import * as errors from "@superbuilders/errors";
 import { create, type PrimerState } from "@superbuilders/primer-tives/client";
 import type { FractionInputSubmission, MatchPair } from "@superbuilders/primer-tives/contracts";
@@ -126,8 +124,8 @@ export function PrimerSession() {
 		setBootError(null);
 		const result = await errors.try(
 			create({
-				origin: env.NEXT_PUBLIC_PRIMER_ORIGIN,
-				publishableKey: env.NEXT_PUBLIC_PRIMER_PUBLISHABLE_KEY,
+				origin: env.VITE_PRIMER_ORIGIN,
+				publishableKey: env.VITE_PRIMER_PUBLISHABLE_KEY,
 				subject: "math",
 				supportedPcis: ["urn:primer:pci:fraction-input"],
 				logger,

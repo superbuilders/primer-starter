@@ -37,8 +37,7 @@
 	--color-success-foreground: var(--success-foreground);
 	--color-destructive: var(--destructive);
 	--color-destructive-foreground: var(--destructive-foreground);
-	--font-sans: var(--font-geist-sans);
-	--font-mono: var(--font-geist-mono);
+	--font-sans: system-ui, sans-serif;
 	--animate-soft-fade-in: soft-fade-in 200ms ease-out;
 }
 
@@ -74,10 +73,17 @@
 	}
 }
 
+html,
+body,
+#root {
+	min-height: 100%;
+}
+
 body {
+	margin: 0;
 	background: var(--background);
 	color: var(--foreground);
-	font-family: var(--font-sans), system-ui, sans-serif;
+	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }

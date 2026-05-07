@@ -1,5 +1,3 @@
-"use client";
-
 import type { ChoiceState } from "@superbuilders/primer-tives/client";
 import { useCallback, useState } from "react";
 

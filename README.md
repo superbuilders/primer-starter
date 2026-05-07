@@ -1,19 +1,18 @@
 # Primer Starter
 
-An opinionated Next.js + TypeScript starter that's wired for Vercel from day one. Type-checking and linting run on every commit so the repo stays clean as it grows.
+An opinionated Vite + React + TypeScript starter wired for the Primer SDK. Type-checking and linting run on every commit so the repo stays clean as it grows.
 
 ## Tech stack
 
-| Layer            | Choice                                                                            |
-| ---------------- | --------------------------------------------------------------------------------- |
-| Runtime / pkg mgr | [Bun](https://bun.com)                                                            |
-| Framework        | [Next.js 16](https://nextjs.org) (App Router, Turbopack)                          |
-| Language         | TypeScript (strict, with `noUncheckedIndexedAccess`)                              |
-| Styling          | [Tailwind CSS v4](https://tailwindcss.com)                                        |
-| Lint / format    | [Biome](https://biomejs.dev) (replaces ESLint + Prettier)                         |
-| Env validation   | [`@t3-oss/env-nextjs`](https://env.t3.gg) + [`zod`](https://zod.dev)              |
-| Git hooks        | [Lefthook](https://lefthook.dev) — runs `typecheck` and `biome check` pre-commit  |
-| Hosting          | [Vercel](https://vercel.com) (auto-detected via `bun.lock`)                       |
+| Layer            | Choice                                                                          |
+| ---------------- | ------------------------------------------------------------------------------- |
+| Runtime / pkg mgr | [Bun](https://bun.com)                                                          |
+| Framework        | [Vite](https://vite.dev) + [React](https://react.dev)                           |
+| Language         | TypeScript (strict, with `noUncheckedIndexedAccess`)                            |
+| Styling          | [Tailwind CSS v4](https://tailwindcss.com) via `@tailwindcss/vite`              |
+| Lint / format    | [Biome](https://biomejs.dev) (replaces ESLint + Prettier)                       |
+| Env validation   | [`@t3-oss/env-core`](https://env.t3.gg) + [`zod`](https://zod.dev)              |
+| Git hooks        | [Lefthook](https://lefthook.dev) — runs `typecheck` and `biome check` pre-commit |
 
 ## Primer integration
 
@@ -21,8 +20,8 @@ This starter ships a working renderer for the [`@superbuilders/primer-tives`](ht
 
 ```ts
 const state = await create({
-  origin: env.NEXT_PUBLIC_PRIMER_ORIGIN,
-  publishableKey: env.NEXT_PUBLIC_PRIMER_PUBLISHABLE_KEY,
+  origin: env.VITE_PRIMER_ORIGIN,
+  publishableKey: env.VITE_PRIMER_PUBLISHABLE_KEY,
   subject: "math",
   supportedPcis: ["urn:primer:pci:fraction-input"],
   logger,
@@ -33,14 +32,16 @@ const state = await create({
 
 ### Required env vars
 
-- `NEXT_PUBLIC_PRIMER_ORIGIN` — origin of the Primer deployment (e.g. `https://sb-primer.vercel.app`).
-- `NEXT_PUBLIC_PRIMER_PUBLISHABLE_KEY` — public Primer frontend key (`pk_…`). Not learner auth; the SDK pairs it with a learner access token resolved in the browser.
+- `VITE_PRIMER_ORIGIN` — origin of the Primer deployment, for example `https://sb-primer.vercel.app`.
+- `VITE_PRIMER_PUBLISHABLE_KEY` — public Primer frontend key (`pk_...`). Not learner auth; the SDK pairs it with a learner access token resolved in the browser.
 
-Both are validated as `client` vars in `src/env.ts`.
+Both are validated in `src/env.schema.ts` and exposed through `src/env.ts`. `vite.config.ts` also validates them during startup/build so missing or malformed values fail fast.
 
 ### Where to look
 
-- `src/components/primer/session.tsx` — calls `create()`, holds `PrimerState`, dispatches by `phase`, and handles SDK error sentinels (`ErrAuthPopupBlocked`, `ErrAuthCancelled`, `ErrMalformedAccessToken`, …) at boot.
+- `src/main.tsx` — mounts the React app into `index.html`.
+- `src/App.tsx` — app shell and Primer page layout.
+- `src/components/primer/session.tsx` — calls `create()`, holds `PrimerState`, dispatches by `phase`, and handles SDK error sentinels (`ErrAuthPopupBlocked`, `ErrAuthCancelled`, `ErrMalformedAccessToken`, ...`) at boot.
 - `src/components/primer/interactions/*` — one renderer per interaction kind (`choice`, `text-entry`, `extended-text`, `order`, `match`) plus the `urn:primer:pci:fraction-input` PCI under `interactions/pci/`.
 - `src/components/primer/{frame,content,stimulus}.tsx` — shared content/stimulus rendering.
 - `src/components/primer/{errored-frame,fatal-frame}.tsx` — sentinel-aware error UIs for runtime `ErroredState` and `FatalState`.
@@ -53,77 +54,61 @@ Both are validated as `client` vars in `src/env.ts`.
 ## Getting started locally
 
 ```bash
-bun install                # also installs Lefthook git hooks via the `prepare` script
-cp .env.example .env.local # fill in values, or pull from Vercel (see below)
-bun dev                    # http://localhost:3000
+bun install                # also installs Lefthook git hooks via the prepare script
+cp .env.example .env.local # fill in values
+bun dev                    # http://localhost:5173
 ```
 
 ### Scripts
 
-| Command             | What it does                                          |
-| ------------------- | ----------------------------------------------------- |
-| `bun dev`           | Start the dev server                                  |
-| `bun run build`     | Production build (also runs env validation)           |
-| `bun start`         | Serve the production build                            |
-| `bun run typecheck` | `tsc --noEmit` over the whole project                 |
-| `bun run lint`      | `biome check` (lint + format check)                   |
-| `bun run lint:fix`  | `biome check --write` (apply safe fixes)              |
-| `bun run format`    | `biome format --write`                                |
+| Command             | What it does                                     |
+| ------------------- | ------------------------------------------------ |
+| `bun dev`           | Start the Vite dev server                        |
+| `bun run build`     | Production build to `dist/`                      |
+| `bun start`         | Preview the production build locally             |
+| `bun run typecheck` | `tsc --noEmit` over the whole project            |
+| `bun run lint`      | `biome check` (lint + format check)              |
+| `bun run lint:fix`  | `biome check --write` (apply safe fixes)         |
+| `bun run format`    | `biome format --write`                           |
 
-## Deploying to Vercel
+## Deploying
 
-This starter is Vercel-first. Vercel auto-detects bun from the committed `bun.lock`, so there's no extra config — just connect the repo and ship.
+Any static host that supports Vite works. Build with `bun run build` and serve the generated `dist/` directory.
 
-### 1. Link the repo to a Vercel project
+For Vercel, set the project framework preset to **Vite** if it is not auto-detected. Use these settings:
 
-Either import the repo from the [Vercel dashboard](https://vercel.com/new), or from the terminal:
+- Build command: `bun run build`
+- Output directory: `dist`
+- Install command: `bun install`
 
-```bash
-bunx vercel link
-```
+### Configure env vars
 
-This creates `.vercel/` (gitignored) tying this checkout to a Vercel project.
+Public browser vars must be prefixed `VITE_`. Add every variable from `.env.example` to each deployment environment where the app should run.
 
-### 2. Pull env vars to `.env.local`
+For Vercel, go to **Project → Settings → Environment Variables** and add them for Production, Preview, and Development as needed. You can still pull them locally with:
 
 ```bash
 bunx vercel env pull .env.local
 ```
 
-This grabs every env var configured in Vercel for the **Development** environment and writes them to `.env.local`. Re-run whenever you add or rotate vars in the dashboard.
-
-### 3. Configure env vars in Vercel
-
-In the Vercel dashboard go to **Project → Settings → Environment Variables**. For each variable in `.env.example`, add it to the environments where it should apply:
-
-- **Production** — values used by `main` deploys
-- **Preview** — values used by PR / branch deploys
-- **Development** — values pulled by `vercel env pull` for local dev
-
-Public vars must be prefixed `NEXT_PUBLIC_` and are listed under `client` in `src/env.ts`. Server-only vars stay under `server`.
-
-### 4. Deploy
-
-- **Auto:** push to `main` → production deploy. Open a PR → preview deploy.
-- **Manual:** `bunx vercel` for a preview, `bunx vercel --prod` for production.
-
-Builds run env validation at build time (`next.config.ts` imports `./src/env`), so deploys fail fast if a required var is missing or malformed.
-
 ## Adding an env var
 
-1. Add it to `src/env.ts` under `server` or `client` (with a zod schema).
-2. If it's a client var, also add it to `experimental__runtimeEnv` so Next inlines it correctly.
+1. Add it to `src/env.schema.ts` with a zod schema.
+2. Prefix browser-exposed variables with `VITE_`.
 3. Document it in `.env.example`.
-4. Set it in Vercel for Production / Preview / Development as appropriate.
-5. Re-run `bunx vercel env pull .env.local` to refresh local values.
+4. Set it in your deployment provider for each environment.
 
 ## Project layout
 
-```
+```txt
+index.html       # Vite HTML entrypoint
 src/
-  app/         # App Router pages, layouts, route handlers
-  env.ts       # Typed env validation (server vs client)
-biome.json     # Lint + format rules
-lefthook.yml   # Pre-commit hooks (typecheck + biome)
-.env.example   # Documented env vars
+  main.tsx       # React mount
+  App.tsx        # App shell
+  styles.css     # Tailwind and design tokens
+  env.schema.ts  # Shared env schema
+  env.ts         # Typed env access for browser code
+biome.json       # Lint + format rules
+lefthook.yml     # Pre-commit hooks (typecheck + biome)
+.env.example     # Documented env vars
 ```

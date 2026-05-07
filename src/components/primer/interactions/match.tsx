@@ -1,5 +1,3 @@
-"use client";
-
 import type { MatchState } from "@superbuilders/primer-tives/client";
 import type { MatchPair, RendererMatchChoice } from "@superbuilders/primer-tives/contracts";
 import { useMemo, useState } from "react";
