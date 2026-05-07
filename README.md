@@ -16,7 +16,7 @@ The Vite + React + TypeScript app for [`primerlearn.dev`](https://primerlearn.de
 
 ## Primer integration
 
-This starter ships a working renderer for the [`@superbuilders/primer-tives`](https://www.npmjs.com/package/@superbuilders/primer-tives) adaptive learning runtime (3.6.0), wired client-side. The lifecycle starts with `start()` and may return an unauthenticated state that your UI advances from an explicit user click:
+This starter ships a working renderer for the [`@superbuilders/primer-tives`](https://www.npmjs.com/package/@superbuilders/primer-tives) adaptive learning runtime (3.7.0), wired client-side. The lifecycle starts with `start()` and may return an unauthenticated state that your UI advances from an explicit user click:
 
 ```ts
 const state = await start({

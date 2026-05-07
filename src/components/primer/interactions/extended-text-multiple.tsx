@@ -17,9 +17,14 @@ export function ExtendedTextMultipleInteraction({
 	isPending,
 }: ExtendedTextMultipleInteractionProps) {
 	const [values, setValues] = useState<string[]>(() => Array(state.minStrings).fill(""));
-	const nonEmptyCount = values.filter((v) => v.trim().length > 0).length;
+	const trimmedValues = values.map((v) => v.trim()).filter((v) => v.length > 0);
+	const hasDuplicates = new Set(trimmedValues).size !== trimmedValues.length;
 	const canAdd = values.length < state.maxStrings && !isPending;
-	const canSubmit = nonEmptyCount >= state.minStrings && !isPending;
+	const canSubmit =
+		trimmedValues.length >= state.minStrings &&
+		trimmedValues.length <= state.maxStrings &&
+		!hasDuplicates &&
+		!isPending;
 
 	const setAt = (i: number, v: string) =>
 		setValues((prev) => {
@@ -34,7 +39,7 @@ export function ExtendedTextMultipleInteraction({
 	};
 
 	const handleSubmit = () => {
-		onSubmit(values.map((v) => v.trim()).filter((v) => v.length > 0));
+		if (canSubmit) onSubmit(trimmedValues);
 	};
 
 	return (
@@ -83,9 +88,11 @@ export function ExtendedTextMultipleInteraction({
 						+ Add entry
 					</Button>
 					<p className="text-xs text-muted-foreground">
-						{state.minStrings === state.maxStrings
-							? `${state.minStrings} required`
-							: `${state.minStrings}–${state.maxStrings} required`}
+						{hasDuplicates
+							? "Duplicate answers are not allowed"
+							: state.minStrings === state.maxStrings
+								? `${state.minStrings} required`
+								: `${state.minStrings}–${state.maxStrings} required`}
 					</p>
 				</div>
 				<Button onClick={handleSubmit} disabled={!canSubmit}>

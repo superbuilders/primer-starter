@@ -6,7 +6,7 @@
       "name": "primer-starter",
       "dependencies": {
         "@superbuilders/errors": "^3.0.2",
-        "@superbuilders/primer-tives": "^3.6.0",
+        "@superbuilders/primer-tives": "^3.7.0",
         "@superbuilders/slog": "^4.0.0",
         "@t3-oss/env-core": "^0.13.11",
         "clsx": "^2.1.1",
@@ -106,7 +106,7 @@
 
     "@superbuilders/errors": ["@superbuilders/errors@3.0.2", "", { "dependencies": { "@biomejs/biome": "^2.0.0-beta.5" }, "peerDependencies": { "typescript": "^5.8.3" } }, "sha512-bcEuxzaWr5nZvqttrHlg1LOvIusdSjblxYEs5BiSWHQEgJqbvxm3qaLCUfKDjgFIxSSsLxkU28s/XWqRciK6ng=="],
 
-    "@superbuilders/primer-tives": ["@superbuilders/primer-tives@3.6.0", "", { "dependencies": { "@superbuilders/errors": "^3.0.2", "zod": "^4.3.6" } }, "sha512-7v4olQFkJoawuP1TEK8957fIcnZrqCNFcz5sEjY6Q7yU4r4uBOZIFNNC2mL4lPsimvGXPoyUdT7LiNQkGHxA1g=="],
+    "@superbuilders/primer-tives": ["@superbuilders/primer-tives@3.7.0", "", { "dependencies": { "@superbuilders/errors": "^3.0.2", "zod": "^4.3.6" } }, "sha512-n9pp4J7d+8gZlzSUW+SRMMmvKqgCEMNoBUowmASKAR5daV5p3hBTkUnZBE9dk8WhHs/Kd0JGBPgGUx+xKXGdZw=="],
 
     "@superbuilders/slog": ["@superbuilders/slog@4.0.0", "", { "dependencies": { "@biomejs/biome": "^2.0.0-beta.5" }, "peerDependencies": { "typescript": "^5.8.3" } }, "sha512-ZZxfp07mjEiOPI7RoB+d1St+KxrHaQ1qi2x8ltjwezNsURf1hLf+0L0Zu05r87NI1Oid9LkhHNZ6GFUGcAWM1Q=="],
 
