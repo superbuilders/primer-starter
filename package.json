@@ -14,7 +14,7 @@
 	},
 	"dependencies": {
 		"@superbuilders/errors": "^3.0.2",
-		"@superbuilders/primer-tives": "^3.5.1",
+		"@superbuilders/primer-tives": "^3.6.0",
 		"@superbuilders/slog": "^4.0.0",
 		"@t3-oss/env-core": "^0.13.11",
 		"clsx": "^2.1.1",

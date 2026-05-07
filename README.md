@@ -16,19 +16,24 @@ An opinionated Vite + React + TypeScript starter wired for the Primer SDK. Type-
 
 ## Primer integration
 
-This starter ships a working renderer for the [`@superbuilders/primer-tives`](https://www.npmjs.com/package/@superbuilders/primer-tives) adaptive learning runtime (3.5.1), wired client-side. The lifecycle is a single async call:
+This starter ships a working renderer for the [`@superbuilders/primer-tives`](https://www.npmjs.com/package/@superbuilders/primer-tives) adaptive learning runtime (3.6.0), wired client-side. The lifecycle starts with `start()` and may return an unauthenticated state that your UI advances from an explicit user click:
 
 ```ts
-const state = await create({
+const state = await start({
   origin: env.VITE_PRIMER_ORIGIN,
   publishableKey: env.VITE_PRIMER_PUBLISHABLE_KEY,
   subject: "math",
   supportedPcis: ["urn:primer:pci:fraction-input"],
   logger,
 });
+
+if (state.phase === "unauthenticated") {
+  // Call directly from a button click or tap handler.
+  const nextState = await state.login();
+}
 ```
 
-`create` resolves learner auth (SDK-managed browser popup by default) and returns the live `PrimerState` machine the renderer drives by switching on `state.phase` and, for interactions, `state.kind`.
+`start` resolves any existing learner auth and returns the live `PrimerState` machine the renderer drives by switching on `state.phase` and, for interactions, `state.kind`. When learner sign-in is needed or a previous auth attempt failed, `start` returns `UnauthenticatedState`; render sign-in UI and call `state.login()` directly from the user's button press so browser popup and redirect protections do not block Primer auth.
 
 ### Required env vars
 
@@ -41,14 +46,14 @@ Both are validated in `src/env.schema.ts` and exposed through `src/env.ts`. `vit
 
 - `src/main.tsx` — mounts the React app into `index.html`.
 - `src/App.tsx` — app shell and Primer page layout.
-- `src/components/primer/session.tsx` — calls `create()`, holds `PrimerState`, dispatches by `phase`, and handles SDK error sentinels (`ErrAuthPopupBlocked`, `ErrAuthCancelled`, `ErrMalformedAccessToken`, ...`) at boot.
+- `src/components/primer/session.tsx` — calls `start()`, holds `PrimerState`, dispatches by `phase`, and handles `UnauthenticatedState.login()` plus SDK auth error sentinels (`ErrAuthPopupBlocked`, `ErrAuthCancelled`, `ErrMalformedAccessToken`, ...).
 - `src/components/primer/interactions/*` — one renderer per interaction kind (`choice`, `text-entry`, `extended-text`, `order`, `match`) plus the `urn:primer:pci:fraction-input` PCI under `interactions/pci/`.
 - `src/components/primer/{frame,content,stimulus}.tsx` — shared content/stimulus rendering.
 - `src/components/primer/{errored-frame,fatal-frame}.tsx` — sentinel-aware error UIs for runtime `ErroredState` and `FatalState`.
 
 ### Caveats
 
-- `PrimerState` is live, in-memory state. **Do not serialize it** — `JSON.stringify(state)` throws `ErrNotSerializable`. Re-create state by calling `create` again after a reload, remount, or account switch.
+- `PrimerState` is live, in-memory state. **Do not serialize it** — `JSON.stringify(state)` throws `ErrNotSerializable`. Re-create state by calling `start` again after a reload, remount, or account switch.
 - The SDK has no server entrypoint. There is no `/server` subpath, no `createPrimerServer`, no token-minting helper — the browser is the auth boundary.
 
 ## Getting started locally

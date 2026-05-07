@@ -1,5 +1,10 @@
 import * as errors from "@superbuilders/errors";
-import { create, type PrimerState } from "@superbuilders/primer-tives/client";
+import {
+	type PrimerOptions,
+	type PrimerState,
+	start,
+	type UnauthenticatedState,
+} from "@superbuilders/primer-tives/client";
 import type { FractionInputSubmission, MatchPair } from "@superbuilders/primer-tives/contracts";
 import {
 	ErrAuthCallbackInvalid,
@@ -30,7 +35,8 @@ import { Button } from "./ui/button";
 
 type FractionPci = "urn:primer:pci:fraction-input";
 
-type BootFailureKind =
+type SessionFailureKind =
+	| "auth-required"
 	| "popup-blocked"
 	| "cancelled"
 	| "state-mismatch"
@@ -40,15 +46,31 @@ type BootFailureKind =
 	| "malformed-token"
 	| "unknown";
 
-interface BootFailure {
-	kind: BootFailureKind;
+interface SessionFailure {
+	kind: SessionFailureKind;
 	headline: string;
 	detail: string;
 	retriable: boolean;
 }
 
-function classifyBootError(err: Error): BootFailure {
-	if (errors.is(err, ErrAuthPopupBlocked)) {
+const primerOptions = {
+	origin: env.VITE_PRIMER_ORIGIN,
+	publishableKey: env.VITE_PRIMER_PUBLISHABLE_KEY,
+	subject: "math",
+	supportedPcis: ["urn:primer:pci:fraction-input"],
+	logger,
+} satisfies PrimerOptions<"math", readonly [FractionPci]>;
+
+function classifyAuthState(error: Error | null): SessionFailure {
+	if (error === null) {
+		return {
+			kind: "auth-required",
+			headline: "Sign in to Primer",
+			detail: "Continue with Primer to start your learning session.",
+			retriable: true,
+		};
+	}
+	if (errors.is(error, ErrAuthPopupBlocked)) {
 		return {
 			kind: "popup-blocked",
 			headline: "Sign-in popup blocked",
@@ -56,7 +78,7 @@ function classifyBootError(err: Error): BootFailure {
 			retriable: true,
 		};
 	}
-	if (errors.is(err, ErrAuthCancelled)) {
+	if (errors.is(error, ErrAuthCancelled)) {
 		return {
 			kind: "cancelled",
 			headline: "Sign-in cancelled",
@@ -64,7 +86,7 @@ function classifyBootError(err: Error): BootFailure {
 			retriable: true,
 		};
 	}
-	if (errors.is(err, ErrAuthStateMismatch)) {
+	if (errors.is(error, ErrAuthStateMismatch)) {
 		return {
 			kind: "state-mismatch",
 			headline: "Sign-in didn't match",
@@ -72,7 +94,7 @@ function classifyBootError(err: Error): BootFailure {
 			retriable: true,
 		};
 	}
-	if (errors.is(err, ErrAuthCallbackInvalid)) {
+	if (errors.is(error, ErrAuthCallbackInvalid)) {
 		return {
 			kind: "callback-invalid",
 			headline: "Sign-in didn't complete",
@@ -80,7 +102,7 @@ function classifyBootError(err: Error): BootFailure {
 			retriable: true,
 		};
 	}
-	if (errors.is(err, ErrAuthUnavailable)) {
+	if (errors.is(error, ErrAuthUnavailable)) {
 		return {
 			kind: "unavailable",
 			headline: "Sign-in unavailable",
@@ -88,7 +110,7 @@ function classifyBootError(err: Error): BootFailure {
 			retriable: false,
 		};
 	}
-	if (errors.is(err, ErrAuthConfigInvalid)) {
+	if (errors.is(error, ErrAuthConfigInvalid)) {
 		return {
 			kind: "config-invalid",
 			headline: "Primer is misconfigured",
@@ -96,13 +118,26 @@ function classifyBootError(err: Error): BootFailure {
 			retriable: false,
 		};
 	}
-	if (errors.is(err, ErrMalformedAccessToken)) {
+	if (errors.is(error, ErrMalformedAccessToken)) {
 		return {
 			kind: "malformed-token",
-			headline: "Invalid access token",
-			detail: "The resolved access token isn't shaped like a learner token.",
-			retriable: false,
+			headline: "Sign-in token invalid",
+			detail: "Sign in with Primer again to continue.",
+			retriable: true,
 		};
+	}
+	return {
+		kind: "unknown",
+		headline: "Sign-in failed",
+		detail: error.message,
+		retriable: true,
+	};
+}
+
+function classifyBootError(err: Error): SessionFailure {
+	const authFailure = classifyAuthState(err);
+	if (authFailure.kind !== "unknown") {
+		return authFailure;
 	}
 	return {
 		kind: "unknown",
@@ -116,24 +151,16 @@ export function PrimerSession() {
 	const startedRef = useRef(false);
 	const [state, setState] = useState<PrimerState<FractionPci> | null>(null);
 	const [isPending, setIsPending] = useState(true);
-	const [bootError, setBootError] = useState<BootFailure | null>(null);
+	const [bootError, setBootError] = useState<SessionFailure | null>(null);
 	const [transitionError, setTransitionError] = useState<Error | null>(null);
 
 	const boot = useCallback(async () => {
 		setIsPending(true);
 		setBootError(null);
-		const result = await errors.try(
-			create({
-				origin: env.VITE_PRIMER_ORIGIN,
-				publishableKey: env.VITE_PRIMER_PUBLISHABLE_KEY,
-				subject: "math",
-				supportedPcis: ["urn:primer:pci:fraction-input"],
-				logger,
-			}),
-		);
+		const result = await errors.try(start(primerOptions));
 		if (result.error) {
 			const failure = classifyBootError(result.error);
-			logger.error("primer create failed", { kind: failure.kind, error: result.error });
+			logger.error("primer start failed", { kind: failure.kind, error: result.error });
 			setBootError(failure);
 			setIsPending(false);
 			return;
@@ -175,6 +202,20 @@ export function PrimerSession() {
 		if (state?.phase !== "errored") return;
 		run(() => state.retry());
 	}, [state, run]);
+
+	const handleLogin = useCallback(() => {
+		if (state?.phase !== "unauthenticated" || isPending) return;
+		const nextState = state.login();
+		setIsPending(true);
+		nextState
+			.then((next) => setState(next))
+			.catch((err: unknown) => {
+				const error = err instanceof Error ? err : new Error(String(err));
+				logger.error("primer login rejected", { error });
+				setTransitionError(error);
+			})
+			.finally(() => setIsPending(false));
+	}, [state, isPending]);
 
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
@@ -233,6 +274,8 @@ export function PrimerSession() {
 	}
 
 	switch (state.phase) {
+		case "unauthenticated":
+			return <UnauthenticatedFrame state={state} onLogin={handleLogin} isPending={isPending} />;
 		case "observation":
 			return <ObservationFrame state={state} onContinue={handleAdvance} isPending={isPending} />;
 		case "feedback":
@@ -307,6 +350,29 @@ export function PrimerSession() {
 					return <UnknownPci pciId={state.pciId satisfies FractionPci} />;
 			}
 	}
+}
+
+function UnauthenticatedFrame({
+	state,
+	onLogin,
+	isPending,
+}: {
+	state: UnauthenticatedState<FractionPci>;
+	onLogin: () => void;
+	isPending: boolean;
+}) {
+	const failure = classifyAuthState(state.error);
+	return (
+		<section className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 px-4 py-16 text-center">
+			<h2 className="text-xl font-semibold tracking-tight">{failure.headline}</h2>
+			<p className="max-w-md text-sm text-muted-foreground">{failure.detail}</p>
+			{failure.retriable ? (
+				<Button onClick={onLogin} disabled={isPending}>
+					{isPending ? "Signing in…" : "Continue with Primer"}
+				</Button>
+			) : null}
+		</section>
+	);
 }
 
 function UnknownPci({ pciId }: { pciId: string }) {
