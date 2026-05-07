@@ -15,6 +15,41 @@ An opinionated Next.js + TypeScript starter that's wired for Vercel from day one
 | Git hooks        | [Lefthook](https://lefthook.dev) — runs `typecheck` and `biome check` pre-commit  |
 | Hosting          | [Vercel](https://vercel.com) (auto-detected via `bun.lock`)                       |
 
+## Primer integration
+
+This starter ships a working renderer for the [`@superbuilders/primer-tives`](https://www.npmjs.com/package/@superbuilders/primer-tives) adaptive learning runtime (3.5.1), wired client-side. The lifecycle is a single async call:
+
+```ts
+const state = await create({
+  origin: env.NEXT_PUBLIC_PRIMER_ORIGIN,
+  publishableKey: env.NEXT_PUBLIC_PRIMER_PUBLISHABLE_KEY,
+  subject: "math",
+  supportedPcis: ["urn:primer:pci:fraction-input"],
+  logger,
+});
+```
+
+`create` resolves learner auth (SDK-managed browser popup by default) and returns the live `PrimerState` machine the renderer drives by switching on `state.phase` and, for interactions, `state.kind`.
+
+### Required env vars
+
+- `NEXT_PUBLIC_PRIMER_ORIGIN` — origin of the Primer deployment (e.g. `https://sb-primer.vercel.app`).
+- `NEXT_PUBLIC_PRIMER_PUBLISHABLE_KEY` — public Primer frontend key (`pk_…`). Not learner auth; the SDK pairs it with a learner access token resolved in the browser.
+
+Both are validated as `client` vars in `src/env.ts`.
+
+### Where to look
+
+- `src/components/primer/session.tsx` — calls `create()`, holds `PrimerState`, dispatches by `phase`, and handles SDK error sentinels (`ErrAuthPopupBlocked`, `ErrAuthCancelled`, `ErrMalformedAccessToken`, …) at boot.
+- `src/components/primer/interactions/*` — one renderer per interaction kind (`choice`, `text-entry`, `extended-text`, `order`, `match`) plus the `urn:primer:pci:fraction-input` PCI under `interactions/pci/`.
+- `src/components/primer/{frame,content,stimulus}.tsx` — shared content/stimulus rendering.
+- `src/components/primer/{errored-frame,fatal-frame}.tsx` — sentinel-aware error UIs for runtime `ErroredState` and `FatalState`.
+
+### Caveats
+
+- `PrimerState` is live, in-memory state. **Do not serialize it** — `JSON.stringify(state)` throws `ErrNotSerializable`. Re-create state by calling `create` again after a reload, remount, or account switch.
+- The SDK has no server entrypoint. There is no `/server` subpath, no `createPrimerServer`, no token-minting helper — the browser is the auth boundary.
+
 ## Getting started locally
 
 ```bash
