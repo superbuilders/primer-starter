@@ -1,6 +1,6 @@
-# Primer Starter
+# Primer Learn
 
-An opinionated Vite + React + TypeScript starter wired for the Primer SDK. Type-checking and linting run on every commit so the repo stays clean as it grows.
+The Vite + React + TypeScript app for [`primerlearn.dev`](https://primerlearn.dev), wired for the Primer SDK. Type-checking and linting run on every commit so the repo stays clean as it grows.
 
 ## Tech stack
 
@@ -37,7 +37,7 @@ if (state.phase === "unauthenticated") {
 
 ### Required env vars
 
-- `VITE_PRIMER_ORIGIN` — origin of the Primer deployment, for example `https://sb-primer.vercel.app`.
+- `VITE_PRIMER_ORIGIN` — origin of the Primer deployment, for example `https://primerlearn.dev`.
 - `VITE_PRIMER_PUBLISHABLE_KEY` — public Primer frontend key (`pk_...`). Not learner auth; the SDK pairs it with a learner access token resolved in the browser.
 
 Both are validated in `src/env.schema.ts` and exposed through `src/env.ts`. `vite.config.ts` also validates them during startup/build so missing or malformed values fail fast.
@@ -78,7 +78,7 @@ bun dev                    # http://localhost:5173
 
 ## Deploying
 
-Any static host that supports Vite works. Build with `bun run build` and serve the generated `dist/` directory.
+Any static host that supports Vite works. Build with `bun run build` and serve the generated `dist/` directory for `primerlearn.dev`.
 
 For Vercel, set the project framework preset to **Vite** if it is not auto-detected. Use these settings:
 
@@ -88,7 +88,7 @@ For Vercel, set the project framework preset to **Vite** if it is not auto-detec
 
 ### Configure env vars
 
-Public browser vars must be prefixed `VITE_`. Add every variable from `.env.example` to each deployment environment where the app should run.
+Public browser vars must be prefixed `VITE_`. Add every variable from `.env.example` to each deployment environment where `primerlearn.dev` should run.
 
 For Vercel, go to **Project → Settings → Environment Variables** and add them for Production, Preview, and Development as needed. You can still pull them locally with:
 
