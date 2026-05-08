@@ -1,8 +1,5 @@
 import type { PciInteractionState } from "@superbuilders/primer-tives/client";
-import type {
-	FractionInputProps,
-	FractionInputSubmission,
-} from "@superbuilders/primer-tives/contracts";
+import type { FractionInputSubmission } from "@superbuilders/primer-tives/contracts";
 import { useEffect, useRef, useState } from "react";
 
 import { Frame } from "../../frame";
@@ -106,10 +103,6 @@ export function FractionInputInteraction({
 						</div>
 					) : null}
 				</div>
-
-				{props.requireSimplified ? (
-					<p className="text-xs text-muted-foreground">Answer must be in lowest terms.</p>
-				) : null}
 			</div>
 
 			<div className="flex justify-end">
@@ -117,8 +110,6 @@ export function FractionInputInteraction({
 					{isPending ? "Submitting…" : "Submit"}
 				</Button>
 			</div>
-
-			<FractionFormHint props={props} />
 		</Frame>
 	);
 }
@@ -159,24 +150,5 @@ function NumericField({
 				"disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-60",
 			)}
 		/>
-	);
-}
-
-function FractionFormHint({ props }: { props: FractionInputProps }) {
-	const label =
-		props.form === "whole"
-			? "Whole number"
-			: props.form === "proper"
-				? "Proper fraction (numerator < denominator)"
-				: props.form === "improper"
-					? "Improper fraction (numerator ≥ denominator)"
-					: "Mixed number";
-	return (
-		<p
-			className="text-xs uppercase text-muted-foreground"
-			style={{ letterSpacing: "var(--tracking-label)" }}
-		>
-			{label}
-		</p>
 	);
 }
