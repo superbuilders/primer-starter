@@ -16,42 +16,40 @@ That's it. Sign-in, the lesson flow, correct/incorrect answers, errors — all h
 
 ---
 
-## 1. Get your publishable key
+## 1. Connect your app to Primer!
 
-1. Go to **[primerlearn.dev](https://primerlearn.dev)**.
-2. Click **Sign in with Google** and pick your Google account.
-3. In the left sidebar, click **Keys**.
-4. Copy your **publishable key** (it starts with `pk_`).
+Before you start coding, you need to grab your secret key to connect the app so it actually works!
 
-## 2. Set up the project
+**Step 1:** Open your code editor and find the file named `.env.example`.
+**Step 2:** Rename that file to just `.env`.
+**Step 3:** Open a web browser and go to exactly this URL:
+👉 **[https://primerlearn.dev/keys](https://primerlearn.dev/keys)** 👈
+**Step 4:** Sign in with your Google account if it asks you.
+**Step 5:** Copy your **Publishable Key** (it looks like a long password starting with `pk_`).
+**Step 6:** Go back to your `.env` file and replace `pk_replace_me` with the key you just copied.
+
+Your `.env` file should look exactly like this when you're done:
+```env
+VITE_PRIMER_PUBLISHABLE_KEY=pk_live_your_actual_key_here_that_you_copied
+```
+
+## 2. Run the code
+
+Open your terminal, make sure you are in the project folder, and run these two commands:
 
 ```bash
-# Install dependencies (uses Bun)
+# 1. Install all the packages (we use Bun!)
 bun install
 
-# Create your env file
-cp .env.example .env
-```
-
-Open `.env` and paste your key into `VITE_PRIMER_PUBLISHABLE_KEY`:
-
-```
-VITE_APP_URL=http://localhost:5173
-VITE_PRIMER_ORIGIN=https://primerlearn.dev
-VITE_PRIMER_PUBLISHABLE_KEY=pk_live_your_key_here
-```
-
-## 3. Run it
-
-```bash
+# 2. Start your app
 bun dev
 ```
 
-Open **http://localhost:5173**. You should see "Sign in to Primer". Click it, sign in with Google, and you'll start a math lesson.
+Now, open **http://localhost:5173** in your browser. You should see "Sign in to Primer". Click it, sign in with Google, and you'll start a math lesson!
 
 ---
 
-## 4. Hooking into the lesson
+## 3. Hooking into the lesson
 
 Pass any of these callbacks to the `<Primer />` component to react to what the learner does. They're all **optional** — use only what you need.
 

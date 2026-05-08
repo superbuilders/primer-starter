@@ -128,8 +128,9 @@ function classifyAuthState(error: Error | null): SessionFailure {
 	if (errors.is(error, ErrAuthConfigInvalid)) {
 		return {
 			kind: "config-invalid",
-			headline: "Primer is misconfigured",
-			detail: "The publishable key or origin is invalid for this deployment.",
+			headline: "Invalid Publishable Key",
+			detail:
+				"It looks like the key in your .env file isn't quite right. Go to https://primerlearn.dev/keys to double-check it.",
 			retriable: false,
 		};
 	}
@@ -185,6 +186,20 @@ export function Primer(props: PrimerProps) {
 	const boot = useCallback(async () => {
 		setIsPending(true);
 		setBootError(null);
+
+		// Fail fast if they didn't replace the template key!
+		if (env.VITE_PRIMER_PUBLISHABLE_KEY === "pk_replace_me") {
+			setBootError({
+				kind: "config-invalid",
+				headline: "You need to set up your key!",
+				detail:
+					"Go to https://primerlearn.dev/keys to get your Publishable Key, and paste it into your .env file.",
+				retriable: false,
+			});
+			setIsPending(false);
+			return;
+		}
+
 		const result = await errors.try(start(primerOptions));
 		if (result.error) {
 			const failure = classifyBootError(result.error);
