@@ -1,6 +1,6 @@
 import type { ExtendedTextMultipleState } from "@superbuilders/primer-tives/client";
+import type { ReactNode } from "react";
 import { useState } from "react";
-
 import { Frame } from "../frame";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
@@ -9,12 +9,14 @@ interface ExtendedTextMultipleInteractionProps {
 	state: ExtendedTextMultipleState;
 	onSubmit: (values: string[]) => void;
 	isPending: boolean;
+	timer?: ReactNode;
 }
 
 export function ExtendedTextMultipleInteraction({
 	state,
 	onSubmit,
 	isPending,
+	timer,
 }: ExtendedTextMultipleInteractionProps) {
 	const [values, setValues] = useState<string[]>(() => Array(state.minStrings).fill(""));
 	const trimmedValues = values.map((v) => v.trim()).filter((v) => v.length > 0);
@@ -43,7 +45,12 @@ export function ExtendedTextMultipleInteraction({
 	};
 
 	return (
-		<Frame body={state.body} stimulus={state.stimulus} prompt={state.interaction.prompt}>
+		<Frame
+			timer={timer}
+			body={state.body}
+			stimulus={state.stimulus}
+			prompt={state.interaction.prompt}
+		>
 			<div className="flex flex-col gap-3">
 				{values.map((value, i) => (
 					<div

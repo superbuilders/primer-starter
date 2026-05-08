@@ -1,7 +1,7 @@
 import type { PciInteractionState } from "@superbuilders/primer-tives/client";
 import type { FractionInputSubmission } from "@superbuilders/primer-tives/contracts";
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-
 import { Frame } from "../../frame";
 import { Button } from "../../ui/button";
 import { cn } from "../../ui/cn";
@@ -14,12 +14,14 @@ interface FractionInputInteractionProps {
 	state: FractionInputState;
 	onSubmit: (value: FractionInputSubmission) => void;
 	isPending: boolean;
+	timer?: ReactNode;
 }
 
 export function FractionInputInteraction({
 	state,
 	onSubmit,
 	isPending,
+	timer,
 }: FractionInputInteractionProps) {
 	const props = state.properties;
 	const [whole, setWhole] = useState("");
@@ -68,7 +70,12 @@ export function FractionInputInteraction({
 	};
 
 	return (
-		<Frame body={state.body} stimulus={state.stimulus} prompt={state.interaction.prompt}>
+		<Frame
+			timer={timer}
+			body={state.body}
+			stimulus={state.stimulus}
+			prompt={state.interaction.prompt}
+		>
 			<div className="flex flex-col gap-3">
 				<div className="flex items-center gap-3">
 					{showWhole ? (

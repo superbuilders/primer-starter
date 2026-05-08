@@ -32,6 +32,7 @@ import { OrderInteraction } from "./interactions/order";
 import { FractionInputInteraction } from "./interactions/pci/fraction-input";
 import { TextEntryInteraction } from "./interactions/text-entry";
 import { ObservationFrame } from "./observation-frame";
+import { QuestionTimer } from "./question-timer";
 import { Button } from "./ui/button";
 
 type FractionPci = "urn:primer:pci:fraction-input";
@@ -168,6 +169,10 @@ export function Primer(props: PrimerProps) {
 	const [bootError, setBootError] = useState<SessionFailure | null>(null);
 	const [transitionError, setTransitionError] = useState<Error | null>(null);
 
+	const [timerKey, setTimerKey] = useState(0);
+	const [activeInteractionState, setActiveInteractionState] =
+		useState<PrimerState<FractionPci> | null>(null);
+
 	const callbacksRef = useRef(props);
 	useEffect(() => {
 		callbacksRef.current = props;
@@ -262,6 +267,14 @@ export function Primer(props: PrimerProps) {
 	const prevPhaseRef = useRef<PrimerPhase | null>(null);
 	useEffect(() => {
 		if (state === null) return;
+
+		if (state.phase === "interaction" && state !== activeInteractionState) {
+			setActiveInteractionState(state);
+			setTimerKey((k) => k + 1);
+		} else if (state.phase !== "interaction" && activeInteractionState !== null) {
+			setActiveInteractionState(null);
+		}
+
 		const prevPhase = prevPhaseRef.current;
 		if (prevPhase === state.phase) return;
 		prevPhaseRef.current = state.phase;
@@ -281,7 +294,7 @@ export function Primer(props: PrimerProps) {
 		} else if (state.phase === "errored" || state.phase === "fatal") {
 			cb.onError?.(state.error);
 		}
-	}, [state]);
+	}, [state, activeInteractionState]);
 
 	if (transitionError !== null) {
 		return (
@@ -336,7 +349,16 @@ export function Primer(props: PrimerProps) {
 			return <ErroredFrame state={state} onRetry={handleRetry} isPending={isPending} />;
 		case "fatal":
 			return <FatalFrame state={state} />;
-		case "interaction":
+		case "interaction": {
+			const timerNode = (
+				<QuestionTimer
+					key={timerKey}
+					durationMs={30000}
+					isPending={isPending}
+					onExpire={() => run(() => state.timeout())}
+				/>
+			);
+
 			switch (state.kind) {
 				case "choice":
 					return (
@@ -344,6 +366,7 @@ export function Primer(props: PrimerProps) {
 							state={state}
 							onSubmit={(keys: string[]) => run(() => state.submitChoice(keys))}
 							isPending={isPending}
+							timer={timerNode}
 						/>
 					);
 				case "text-entry":
@@ -352,6 +375,7 @@ export function Primer(props: PrimerProps) {
 							state={state}
 							onSubmit={(value: string) => run(() => state.submitText(value))}
 							isPending={isPending}
+							timer={timerNode}
 						/>
 					);
 				case "extended-text":
@@ -361,6 +385,7 @@ export function Primer(props: PrimerProps) {
 								state={state}
 								onSubmit={(value: string) => run(() => state.submitText(value))}
 								isPending={isPending}
+								timer={timerNode}
 							/>
 						);
 					}
@@ -369,6 +394,7 @@ export function Primer(props: PrimerProps) {
 							state={state}
 							onSubmit={(values: string[]) => run(() => state.submitTexts(values))}
 							isPending={isPending}
+							timer={timerNode}
 						/>
 					);
 				case "order":
@@ -377,6 +403,7 @@ export function Primer(props: PrimerProps) {
 							state={state}
 							onSubmit={(keys: string[]) => run(() => state.submitOrder(keys))}
 							isPending={isPending}
+							timer={timerNode}
 						/>
 					);
 				case "match":
@@ -385,6 +412,7 @@ export function Primer(props: PrimerProps) {
 							state={state}
 							onSubmit={(pairs: MatchPair[]) => run(() => state.submitMatch(pairs))}
 							isPending={isPending}
+							timer={timerNode}
 						/>
 					);
 				case "portable-custom":
@@ -394,11 +422,13 @@ export function Primer(props: PrimerProps) {
 								state={state}
 								onSubmit={(value: FractionInputSubmission) => run(() => state.submit(value))}
 								isPending={isPending}
+								timer={timerNode}
 							/>
 						);
 					}
 					return <UnknownPci pciId={state.pciId satisfies FractionPci} />;
 			}
+		}
 	}
 }
 

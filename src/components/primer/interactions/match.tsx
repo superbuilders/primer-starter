@@ -1,8 +1,8 @@
 import type { MatchState } from "@superbuilders/primer-tives/client";
 import type { MatchPair, RendererMatchChoice } from "@superbuilders/primer-tives/contracts";
 import { validateSubmissionForInteraction } from "@superbuilders/primer-tives/contracts";
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
-
 import { Inline } from "../content";
 import { Frame } from "../frame";
 import { Button } from "../ui/button";
@@ -12,9 +12,10 @@ interface MatchInteractionProps {
 	state: MatchState;
 	onSubmit: (pairs: MatchPair[]) => void;
 	isPending: boolean;
+	timer?: ReactNode;
 }
 
-export function MatchInteraction({ state, onSubmit, isPending }: MatchInteractionProps) {
+export function MatchInteraction({ state, onSubmit, isPending, timer }: MatchInteractionProps) {
 	const [pairs, setPairs] = useState<MatchPair[]>([]);
 	const [activeSource, setActiveSource] = useState<string | null>(null);
 	const sourceCounts = useMemo(() => countUsage(pairs, "source"), [pairs]);
@@ -59,7 +60,12 @@ export function MatchInteraction({ state, onSubmit, isPending }: MatchInteractio
 	};
 
 	return (
-		<Frame body={state.body} stimulus={state.stimulus} prompt={state.interaction.prompt}>
+		<Frame
+			timer={timer}
+			body={state.body}
+			stimulus={state.stimulus}
+			prompt={state.interaction.prompt}
+		>
 			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				<ChoiceColumn
 					label="Sources"

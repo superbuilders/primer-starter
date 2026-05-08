@@ -13,16 +13,18 @@ interface FrameProps {
 	body: ContentBlock[];
 	stimulus: RendererStimulus | null;
 	prompt?: ContentInline[];
+	timer?: ReactNode;
 	children?: ReactNode;
 	className?: string;
 }
 
-export function Frame({ body, stimulus, prompt, children, className }: FrameProps) {
+export function Frame({ body, stimulus, prompt, timer, children, className }: FrameProps) {
 	return (
 		<section
 			data-slot="primer-frame"
 			className={cn("mx-auto flex w-full max-w-2xl flex-col gap-6 px-4 py-10 sm:py-14", className)}
 		>
+			{timer}
 			<Blocks blocks={body} />
 			<Stimulus stimulus={stimulus} />
 			{prompt && prompt.length > 0 ? (

@@ -1,6 +1,6 @@
 import type { ChoiceState } from "@superbuilders/primer-tives/client";
+import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
-
 import { Inline } from "../content";
 import { Frame } from "../frame";
 import { Button } from "../ui/button";
@@ -10,9 +10,10 @@ interface ChoiceInteractionProps {
 	state: ChoiceState;
 	onSubmit: (selectedKeys: string[]) => void;
 	isPending: boolean;
+	timer?: ReactNode;
 }
 
-export function ChoiceInteraction({ state, onSubmit, isPending }: ChoiceInteractionProps) {
+export function ChoiceInteraction({ state, onSubmit, isPending, timer }: ChoiceInteractionProps) {
 	const [selected, setSelected] = useState<string[]>([]);
 	const isMulti = state.maxChoices !== 1;
 
@@ -35,7 +36,12 @@ export function ChoiceInteraction({ state, onSubmit, isPending }: ChoiceInteract
 	const canSubmit = isMulti && selected.length >= state.minChoices && !isPending;
 
 	return (
-		<Frame body={state.body} stimulus={state.stimulus} prompt={state.interaction.prompt}>
+		<Frame
+			timer={timer}
+			body={state.body}
+			stimulus={state.stimulus}
+			prompt={state.interaction.prompt}
+		>
 			<fieldset
 				className="grid grid-cols-1 gap-2.5 sm:grid-cols-[repeat(auto-fit,minmax(13rem,1fr))]"
 				aria-labelledby="primer-prompt"

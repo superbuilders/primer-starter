@@ -1,6 +1,6 @@
 import type { OrderState } from "@superbuilders/primer-tives/client";
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
-
 import { Inline } from "../content";
 import { Frame } from "../frame";
 import { Button } from "../ui/button";
@@ -10,9 +10,10 @@ interface OrderInteractionProps {
 	state: OrderState;
 	onSubmit: (orderedKeys: string[]) => void;
 	isPending: boolean;
+	timer?: ReactNode;
 }
 
-export function OrderInteraction({ state, onSubmit, isPending }: OrderInteractionProps) {
+export function OrderInteraction({ state, onSubmit, isPending, timer }: OrderInteractionProps) {
 	const initial = useMemo(() => state.choices.map((c) => c.identifier), [state.choices]);
 	const [order, setOrder] = useState<string[]>(initial);
 	const [selected, setSelected] = useState<Set<string>>(new Set(initial));
@@ -48,7 +49,12 @@ export function OrderInteraction({ state, onSubmit, isPending }: OrderInteractio
 		!isPending;
 
 	return (
-		<Frame body={state.body} stimulus={state.stimulus} prompt={state.interaction.prompt}>
+		<Frame
+			timer={timer}
+			body={state.body}
+			stimulus={state.stimulus}
+			prompt={state.interaction.prompt}
+		>
 			<ol className="flex flex-col gap-2" aria-labelledby="primer-prompt">
 				{order.map((key, i) => {
 					const choice = choiceMap.get(key);
