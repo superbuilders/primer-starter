@@ -36,6 +36,8 @@ import { Button } from "./ui/button";
 
 type FractionPci = "urn:primer:pci:fraction-input";
 
+const PRIMER_ORIGIN = "https://primerlearn.dev";
+
 export type PrimerPhase = PrimerState<FractionPci>["phase"];
 
 export interface PrimerProps {
@@ -66,7 +68,7 @@ interface SessionFailure {
 }
 
 const primerOptions = {
-	origin: env.VITE_PRIMER_ORIGIN,
+	origin: PRIMER_ORIGIN,
 	publishableKey: env.VITE_PRIMER_PUBLISHABLE_KEY,
 	subject: "math",
 	supportedPcis: ["urn:primer:pci:fraction-input"],
