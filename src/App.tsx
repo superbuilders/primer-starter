@@ -1,4 +1,4 @@
-import { PrimerSession } from "@/components/primer/session";
+import { Primer } from "@/components/primer";
 
 export function App() {
 	return (
@@ -14,7 +14,7 @@ export function App() {
 				<span className="text-lg font-semibold tracking-tight">Primer</span>
 			</header>
 			<main className="flex w-full flex-1 flex-col">
-				<PrimerSession />
+				<Primer />
 			</main>
 		</div>
 	);

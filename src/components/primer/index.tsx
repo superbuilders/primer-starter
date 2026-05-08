@@ -1,5 +1,6 @@
 import * as errors from "@superbuilders/errors";
 import {
+	type FeedbackState,
 	type PrimerOptions,
 	type PrimerState,
 	start,
@@ -34,6 +35,17 @@ import { ObservationFrame } from "./observation-frame";
 import { Button } from "./ui/button";
 
 type FractionPci = "urn:primer:pci:fraction-input";
+
+export type PrimerPhase = PrimerState<FractionPci>["phase"];
+
+export interface PrimerProps {
+	onCorrect?: (state: FeedbackState) => void;
+	onIncorrect?: (state: FeedbackState) => void;
+	onComplete?: () => void;
+	onError?: (error: Error) => void;
+	onPhaseChange?: (phase: PrimerPhase) => void;
+	onAuthenticated?: () => void;
+}
 
 type SessionFailureKind =
 	| "auth-required"
@@ -147,12 +159,21 @@ function classifyBootError(err: Error): SessionFailure {
 	};
 }
 
-export function PrimerSession() {
+export function Primer(props: PrimerProps) {
 	const startedRef = useRef(false);
 	const [state, setState] = useState<PrimerState<FractionPci> | null>(null);
 	const [isPending, setIsPending] = useState(true);
 	const [bootError, setBootError] = useState<SessionFailure | null>(null);
 	const [transitionError, setTransitionError] = useState<Error | null>(null);
+
+	const callbacksRef = useRef(props);
+	useEffect(() => {
+		callbacksRef.current = props;
+	});
+
+	const reportError = useCallback((error: Error) => {
+		callbacksRef.current.onError?.(error);
+	}, []);
 
 	const boot = useCallback(async () => {
 		setIsPending(true);
@@ -163,11 +184,12 @@ export function PrimerSession() {
 			logger.error("primer start failed", { kind: failure.kind, error: result.error });
 			setBootError(failure);
 			setIsPending(false);
+			reportError(result.error);
 			return;
 		}
 		setState(result.data);
 		setIsPending(false);
-	}, []);
+	}, [reportError]);
 
 	useEffect(() => {
 		if (startedRef.current) return;
@@ -186,11 +208,12 @@ export function PrimerSession() {
 				const error = err instanceof Error ? err : new Error(String(err));
 				logger.error("primer transition rejected", { error });
 				setTransitionError(error);
+				reportError(error);
 			} finally {
 				setIsPending(false);
 			}
 		},
-		[isPending],
+		[isPending, reportError],
 	);
 
 	const handleAdvance = useCallback(() => {
@@ -213,9 +236,10 @@ export function PrimerSession() {
 				const error = err instanceof Error ? err : new Error(String(err));
 				logger.error("primer login rejected", { error });
 				setTransitionError(error);
+				reportError(error);
 			})
 			.finally(() => setIsPending(false));
-	}, [state, isPending]);
+	}, [state, isPending, reportError]);
 
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
@@ -232,6 +256,30 @@ export function PrimerSession() {
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [state, handleAdvance]);
+
+	const prevPhaseRef = useRef<PrimerPhase | null>(null);
+	useEffect(() => {
+		if (state === null) return;
+		const prevPhase = prevPhaseRef.current;
+		if (prevPhase === state.phase) return;
+		prevPhaseRef.current = state.phase;
+
+		const cb = callbacksRef.current;
+		cb.onPhaseChange?.(state.phase);
+
+		if (prevPhase === "unauthenticated" && state.phase !== "unauthenticated") {
+			cb.onAuthenticated?.();
+		}
+
+		if (state.phase === "feedback") {
+			if (state.isCorrect) cb.onCorrect?.(state);
+			else cb.onIncorrect?.(state);
+		} else if (state.phase === "completed") {
+			cb.onComplete?.();
+		} else if (state.phase === "errored" || state.phase === "fatal") {
+			cb.onError?.(state.error);
+		}
+	}, [state]);
 
 	if (transitionError !== null) {
 		return (

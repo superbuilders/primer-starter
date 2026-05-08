@@ -1,119 +1,125 @@
-# Primer Learn
+# Primer Starter
 
-The Vite + React + TypeScript app for [`primerlearn.dev`](https://primerlearn.dev), wired for the Primer SDK. Type-checking and linting run on every commit so the repo stays clean as it grows.
+A ready-to-go React app with the **Primer SDK** pre-wired. Drop in your publishable key, run two commands, and you have a working learning session you can hook into for games, scoring, progress tracking — anything.
 
-## Tech stack
+The whole SDK is wrapped in one component:
 
-| Layer            | Choice                                                                          |
-| ---------------- | ------------------------------------------------------------------------------- |
-| Runtime / pkg mgr | [Bun](https://bun.com)                                                          |
-| Framework        | [Vite](https://vite.dev) + [React](https://react.dev)                           |
-| Language         | TypeScript (strict, with `noUncheckedIndexedAccess`)                            |
-| Styling          | [Tailwind CSS v4](https://tailwindcss.com) via `@tailwindcss/vite`              |
-| Lint / format    | [Biome](https://biomejs.dev) (replaces ESLint + Prettier)                       |
-| Env validation   | [`@t3-oss/env-core`](https://env.t3.gg) + [`zod`](https://zod.dev)              |
-| Git hooks        | [Lefthook](https://lefthook.dev) — runs `typecheck` and `biome check` pre-commit |
+```tsx
+import { Primer } from "./components/primer";
 
-## Primer integration
-
-This starter ships a working renderer for the [`@superbuilders/primer-tives`](https://www.npmjs.com/package/@superbuilders/primer-tives) adaptive learning runtime (3.7.0), wired client-side. The lifecycle starts with `start()` and may return an unauthenticated state that your UI advances from an explicit user click:
-
-```ts
-const state = await start({
-  origin: env.VITE_PRIMER_ORIGIN,
-  publishableKey: env.VITE_PRIMER_PUBLISHABLE_KEY,
-  subject: "math",
-  supportedPcis: ["urn:primer:pci:fraction-input"],
-  logger,
-});
-
-if (state.phase === "unauthenticated") {
-  // Call directly from a button click or tap handler.
-  const nextState = await state.login();
+export function App() {
+  return <Primer />;
 }
 ```
 
-`start` resolves any existing learner auth and returns the live `PrimerState` machine the renderer drives by switching on `state.phase` and, for interactions, `state.kind`. When learner sign-in is needed or a previous auth attempt failed, `start` returns `UnauthenticatedState`; render sign-in UI and call `state.login()` directly from the user's button press so browser popup and redirect protections do not block Primer auth.
+That's it. Sign-in, the lesson flow, correct/incorrect answers, errors — all handled.
 
-### Required env vars
+---
 
-- `VITE_PRIMER_ORIGIN` — origin of the Primer deployment, for example `https://primerlearn.dev`.
-- `VITE_PRIMER_PUBLISHABLE_KEY` — public Primer frontend key (`pk_...`). Not learner auth; the SDK pairs it with a learner access token resolved in the browser.
+## 1. Get your publishable key
 
-Both are validated in `src/env.schema.ts` and exposed through `src/env.ts`. `vite.config.ts` also validates them during startup/build so missing or malformed values fail fast.
+1. Go to **[primerlearn.dev](https://primerlearn.dev)**.
+2. Click **Sign in with Google** and pick your Google account.
+3. In the left sidebar, click **Keys**.
+4. Copy your **publishable key** (it starts with `pk_`).
 
-### Where to look
-
-- `src/main.tsx` — mounts the React app into `index.html`.
-- `src/App.tsx` — app shell and Primer page layout.
-- `src/components/primer/session.tsx` — calls `start()`, holds `PrimerState`, dispatches by `phase`, and handles `UnauthenticatedState.login()` plus SDK auth error sentinels (`ErrAuthPopupBlocked`, `ErrAuthCancelled`, `ErrMalformedAccessToken`, ...).
-- `src/components/primer/interactions/*` — one renderer per interaction kind (`choice`, `text-entry`, `extended-text`, `order`, `match`) plus the `urn:primer:pci:fraction-input` PCI under `interactions/pci/`.
-- `src/components/primer/{frame,content,stimulus}.tsx` — shared content/stimulus rendering.
-- `src/components/primer/{errored-frame,fatal-frame}.tsx` — sentinel-aware error UIs for runtime `ErroredState` and `FatalState`.
-
-### Caveats
-
-- `PrimerState` is live, in-memory state. **Do not serialize it** — `JSON.stringify(state)` throws `ErrNotSerializable`. Re-create state by calling `start` again after a reload, remount, or account switch.
-- The SDK has no server entrypoint. There is no `/server` subpath, no `createPrimerServer`, no token-minting helper — the browser is the auth boundary.
-
-## Getting started locally
+## 2. Set up the project
 
 ```bash
-bun install                # also installs Lefthook git hooks via the prepare script
-cp .env.example .env.local # fill in values
-bun dev                    # http://localhost:5173
+# Install dependencies (uses Bun)
+bun install
+
+# Create your env file
+cp .env.example .env
 ```
 
-### Scripts
+Open `.env` and paste your key into `VITE_PRIMER_PUBLISHABLE_KEY`:
 
-| Command             | What it does                                     |
-| ------------------- | ------------------------------------------------ |
-| `bun dev`           | Start the Vite dev server                        |
-| `bun run build`     | Production build to `dist/`                      |
-| `bun start`         | Preview the production build locally             |
-| `bun run typecheck` | `tsc --noEmit` over the whole project            |
-| `bun run lint`      | `biome check` (lint + format check)              |
-| `bun run lint:fix`  | `biome check --write` (apply safe fixes)         |
-| `bun run format`    | `biome format --write`                           |
+```
+VITE_APP_URL=http://localhost:5173
+VITE_PRIMER_ORIGIN=https://primerlearn.dev
+VITE_PRIMER_PUBLISHABLE_KEY=pk_live_your_key_here
+```
+
+## 3. Run it
+
+```bash
+bun dev
+```
+
+Open **http://localhost:5173**. You should see "Sign in to Primer". Click it, sign in with Google, and you'll start a math lesson.
+
+---
+
+## 4. Hooking into the lesson
+
+Pass any of these callbacks to the `<Primer />` component to react to what the learner does. They're all **optional** — use only what you need.
+
+```tsx
+<Primer
+  onCorrect={(state)     => score += 10}
+  onIncorrect={(state)   => lives -= 1}
+  onComplete={()         => showWinScreen()}
+  onError={(err)         => showToast(err.message)}
+  onPhaseChange={(phase) => console.log("phase:", phase)}
+  onAuthenticated={()    => console.log("user signed in")}
+/>
+```
+
+| Callback          | Fires when                                    | Payload                                                                                              |
+| ----------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `onCorrect`       | The learner submits a **correct** answer      | The full `FeedbackState` (has `submission`, `feedbackContent`, `review`, `interaction`, etc.)        |
+| `onIncorrect`     | The learner submits a **wrong** answer        | Same `FeedbackState`, but `isCorrect === false`                                                      |
+| `onComplete`      | The lesson finishes                           | —                                                                                                    |
+| `onError`         | Anything fails (boot, auth, transition, fatal)| `Error`                                                                                              |
+| `onPhaseChange`   | Every phase transition                        | `"unauthenticated" \| "observation" \| "interaction" \| "feedback" \| "completed" \| "errored" \| "fatal"` |
+| `onAuthenticated` | The user signs in successfully                | —                                                                                                    |
+
+### Game integration example
+
+```tsx
+import { useState } from "react";
+import { Primer } from "./components/primer";
+
+export function MathGame() {
+  const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(3);
+  const [done, setDone] = useState(false);
+
+  return (
+    <>
+      <header>Score: {score} • Lives: {lives}</header>
+
+      <Primer
+        onCorrect={() => setScore((s) => s + 10)}
+        onIncorrect={() => setLives((l) => l - 1)}
+        onComplete={() => setDone(true)}
+      />
+
+      {done && <WinScreen score={score} />}
+    </>
+  );
+}
+```
+
+The `Primer` component takes care of everything inside it — you just drive your own UI from the callbacks.
+
+---
 
 ## Deploying
 
-Any static host that supports Vite works. Build with `bun run build` and serve the generated `dist/` directory for `primerlearn.dev`.
-
-For Vercel, set the project framework preset to **Vite** if it is not auto-detected. Use these settings:
+This is a static Vite app — push it to **Vercel** (or any static host).
 
 - Build command: `bun run build`
 - Output directory: `dist`
 - Install command: `bun install`
+- Set the same `VITE_*` env vars in your host's environment settings.
 
-### Configure env vars
+## Scripts
 
-Public browser vars must be prefixed `VITE_`. Add every variable from `.env.example` to each deployment environment where `primerlearn.dev` should run.
-
-For Vercel, go to **Project → Settings → Environment Variables** and add them for Production, Preview, and Development as needed. You can still pull them locally with:
-
-```bash
-bunx vercel env pull .env.local
-```
-
-## Adding an env var
-
-1. Add it to `src/env.schema.ts` with a zod schema.
-2. Prefix browser-exposed variables with `VITE_`.
-3. Document it in `.env.example`.
-4. Set it in your deployment provider for each environment.
-
-## Project layout
-
-```txt
-index.html       # Vite HTML entrypoint
-src/
-  main.tsx       # React mount
-  App.tsx        # App shell
-  styles.css     # Tailwind and design tokens
-  env.schema.ts  # Shared env schema
-  env.ts         # Typed env access for browser code
-biome.json       # Lint + format rules
-lefthook.yml     # Pre-commit hooks (typecheck + biome)
-.env.example     # Documented env vars
-```
+| Command             | What it does            |
+| ------------------- | ----------------------- |
+| `bun dev`           | Start the dev server    |
+| `bun run build`     | Production build        |
+| `bun run typecheck` | TypeScript check        |
+| `bun run lint`      | Biome lint              |
