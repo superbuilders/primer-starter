@@ -2,7 +2,6 @@ import type { FeedbackState } from "@superbuilders/primer-tives/client";
 
 import { Inline } from "./content";
 import { Frame } from "./frame";
-import { ReviewView } from "./review-view";
 import { SubmissionView } from "./submission-view";
 import { Button } from "./ui/button";
 import { cn } from "./ui/cn";
@@ -42,8 +41,6 @@ export function FeedbackFrame({ state, onContinue, isPending }: FeedbackFramePro
 					</p>
 				) : null}
 			</output>
-
-			{state.review ? <ReviewView interaction={state.interaction} review={state.review} /> : null}
 
 			<div className="flex justify-end">
 				<Button onClick={onContinue} disabled={isPending}>
