@@ -17,7 +17,7 @@ import {
 	ErrMalformedAccessToken,
 } from "@superbuilders/primer-tives/errors";
 import * as logger from "@superbuilders/slog";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 import { env } from "@/env";
 import { CompletedFrame } from "./completed-frame";
@@ -64,7 +64,7 @@ type SessionFailureKind =
 interface SessionFailure {
 	kind: SessionFailureKind;
 	headline: string;
-	detail: string;
+	detail: ReactNode;
 	retriable: boolean;
 }
 
@@ -129,8 +129,20 @@ function classifyAuthState(error: Error | null): SessionFailure {
 		return {
 			kind: "config-invalid",
 			headline: "Invalid Publishable Key",
-			detail:
-				"It looks like the key in your .env file isn't quite right. Go to https://primerlearn.dev/keys to double-check it.",
+			detail: (
+				<>
+					It looks like the key in your .env file isn't quite right. Go to{" "}
+					<a
+						href="https://primerlearn.dev/keys"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="underline hover:text-foreground"
+					>
+						https://primerlearn.dev/keys
+					</a>{" "}
+					to double-check it.
+				</>
+			),
 			retriable: false,
 		};
 	}
@@ -192,8 +204,20 @@ export function Primer(props: PrimerProps) {
 			setBootError({
 				kind: "config-invalid",
 				headline: "You need to set up your key!",
-				detail:
-					"Go to https://primerlearn.dev/keys to get your Publishable Key, and paste it into your .env file.",
+				detail: (
+					<>
+						Go to{" "}
+						<a
+							href="https://primerlearn.dev/keys"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="underline hover:text-foreground"
+						>
+							https://primerlearn.dev/keys
+						</a>{" "}
+						to get your Publishable Key, and paste it into your .env file.
+					</>
+				),
 				retriable: false,
 			});
 			setIsPending(false);
