@@ -1,12 +1,11 @@
-import temml from "temml";
+import { renderLatexToHtml } from "./render-latex";
 
 interface LatexProps {
 	value: string;
-	display?: boolean;
 }
 
-export function Latex({ value, display = false }: LatexProps) {
-	const html = temml.renderToString(value, { displayMode: display, throwOnError: false });
+export function Latex({ value }: LatexProps) {
+	const html = renderLatexToHtml(value);
 	return (
 		<span
 			data-slot="latex"

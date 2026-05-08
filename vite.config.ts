@@ -27,6 +27,9 @@ export default defineConfig(({ mode }) => {
 	validateEnv(mode);
 
 	return {
+		optimizeDeps: {
+			exclude: ["temml"],
+		},
 		plugins: [react(), tailwindcss()],
 		resolve: {
 			alias: {
