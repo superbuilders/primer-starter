@@ -16,7 +16,7 @@ import {
 	ErrAuthUnavailable,
 	ErrMalformedAccessToken,
 } from "@superbuilders/primer-tives/errors";
-import * as logger from "@superbuilders/slog";
+import pino from "pino";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 import { env } from "@/env";
@@ -34,6 +34,8 @@ import { TextEntryInteraction } from "./interactions/text-entry";
 import { ObservationFrame } from "./observation-frame";
 import { QuestionTimer } from "./question-timer";
 import { Button } from "./ui/button";
+
+const logger = pino({ level: "info" });
 
 type FractionPci = "urn:primer:pci:fraction-input";
 
@@ -227,7 +229,7 @@ export function Primer(props: PrimerProps) {
 		const result = await errors.try(start(primerOptions));
 		if (result.error) {
 			const failure = classifyBootError(result.error);
-			logger.error("primer start failed", { kind: failure.kind, error: result.error });
+			logger.error({ kind: failure.kind, error: result.error }, "primer start failed");
 			setBootError(failure);
 			setIsPending(false);
 			reportError(result.error);
@@ -252,7 +254,7 @@ export function Primer(props: PrimerProps) {
 				setState(next);
 			} catch (err) {
 				const error = err instanceof Error ? err : new Error(String(err));
-				logger.error("primer transition rejected", { error });
+				logger.error({ error }, "primer transition rejected");
 				setTransitionError(error);
 				reportError(error);
 			} finally {
@@ -280,7 +282,7 @@ export function Primer(props: PrimerProps) {
 			.then((next) => setState(next))
 			.catch((err: unknown) => {
 				const error = err instanceof Error ? err : new Error(String(err));
-				logger.error("primer login rejected", { error });
+				logger.error({ error }, "primer login rejected");
 				setTransitionError(error);
 				reportError(error);
 			})
