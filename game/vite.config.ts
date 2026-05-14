@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 import { z } from "zod";
 
-import { clientEnvSchema } from "./game/src/env.schema";
+import { clientEnvSchema } from "./src/env.schema";
 
 const envSchema = z.object(clientEnvSchema);
 
@@ -27,6 +27,11 @@ export default defineConfig(({ mode }) => {
 	validateEnv(mode);
 
 	return {
+		base: "./",
+		build: {
+			outDir: "../public/game",
+			emptyOutDir: true,
+		},
 		optimizeDeps: {
 			exclude: ["temml"],
 		},
