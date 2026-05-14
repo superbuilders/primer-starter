@@ -2,34 +2,13 @@ import { fileURLToPath, URL } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
-import { z } from "zod";
 
-import { clientEnvSchema } from "./game/src/env.schema";
-
-const envSchema = z.object(clientEnvSchema);
-
-function validateEnv(mode: string) {
-	const parsed = envSchema.safeParse({
-		...loadEnv(mode, process.cwd(), "VITE_"),
-		...process.env,
-	});
-
-	if (parsed.success) return;
-
-	const issues = parsed.error.issues
-		.map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-		.join("\n");
-
-	throw new Error(`Invalid environment variables:\n${issues}`);
-}
+import { primerEnvSchema } from "./shared/primer";
 
 export default defineConfig(({ mode }) => {
 	validateEnv(mode);
 
 	return {
-		optimizeDeps: {
-			exclude: ["temml"],
-		},
 		plugins: [react(), tailwindcss()],
 		resolve: {
 			alias: {
@@ -38,3 +17,18 @@ export default defineConfig(({ mode }) => {
 		},
 	};
 });
+
+function validateEnv(mode: string) {
+	const { success, error } = primerEnvSchema.safeParse({
+		...loadEnv(mode, process.cwd(), "VITE_"),
+		...process.env,
+	});
+
+	if (success) return;
+
+	const issues = error.issues
+		.map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+		.join("\n");
+
+	throw new Error(`Invalid environment variables:\n${issues}`);
+}

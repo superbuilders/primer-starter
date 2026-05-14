@@ -19,7 +19,6 @@ import {
 import pino from "pino";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
-import { env } from "@/env";
 import { CompletedFrame } from "./completed-frame";
 import { ErroredFrame } from "./errored-frame";
 import { FatalFrame } from "./fatal-frame";
@@ -44,6 +43,8 @@ const PRIMER_ORIGIN = "https://primerlearn.dev";
 export type PrimerPhase = PrimerState<FractionPci>["phase"];
 
 export interface PrimerProps {
+	publishableKey: string;
+	onStarted?: () => void;
 	onCorrect?: (state: FeedbackState) => void;
 	onIncorrect?: (state: FeedbackState) => void;
 	onComplete?: () => void;
@@ -69,15 +70,6 @@ interface SessionFailure {
 	detail: ReactNode;
 	retriable: boolean;
 }
-
-const primerOptions = {
-	origin: PRIMER_ORIGIN,
-	publishableKey: env.VITE_PRIMER_PUBLISHABLE_KEY,
-	subject: "math",
-	supportedPcis: ["urn:primer:pci:fraction-input"],
-	logger,
-} satisfies PrimerOptions<"math", readonly [FractionPci]>;
-
 function classifyAuthState(error: Error | null): SessionFailure {
 	if (error === null) {
 		return {
@@ -133,7 +125,7 @@ function classifyAuthState(error: Error | null): SessionFailure {
 			headline: "Invalid Publishable Key",
 			detail: (
 				<>
-					It looks like the key in your .env file isn't quite right. Go to{" "}
+					It looks like the Primer publishable key isn't quite right. Go to{" "}
 					<a
 						href="https://primerlearn.dev/keys"
 						target="_blank"
@@ -178,6 +170,7 @@ function classifyBootError(err: Error): SessionFailure {
 }
 
 export function Primer(props: PrimerProps) {
+	const { publishableKey } = props;
 	const startedRef = useRef(false);
 	const [state, setState] = useState<PrimerState<FractionPci> | null>(null);
 	const [isPending, setIsPending] = useState(true);
@@ -201,30 +194,13 @@ export function Primer(props: PrimerProps) {
 		setIsPending(true);
 		setBootError(null);
 
-		// Fail fast if they didn't replace the template key!
-		if (env.VITE_PRIMER_PUBLISHABLE_KEY === "pk_replace_me") {
-			setBootError({
-				kind: "config-invalid",
-				headline: "You need to set up your key!",
-				detail: (
-					<>
-						Go to{" "}
-						<a
-							href="https://primerlearn.dev/keys"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="underline hover:text-foreground"
-						>
-							https://primerlearn.dev/keys
-						</a>{" "}
-						to get your Publishable Key, and paste it into your .env file.
-					</>
-				),
-				retriable: false,
-			});
-			setIsPending(false);
-			return;
-		}
+		const primerOptions = {
+			origin: PRIMER_ORIGIN,
+			publishableKey,
+			subject: "math",
+			supportedPcis: ["urn:primer:pci:fraction-input"],
+			logger,
+		} satisfies PrimerOptions<"math", readonly [FractionPci]>;
 
 		const result = await errors.try(start(primerOptions));
 		if (result.error) {
@@ -237,7 +213,8 @@ export function Primer(props: PrimerProps) {
 		}
 		setState(result.data);
 		setIsPending(false);
-	}, [reportError]);
+		callbacksRef.current.onStarted?.();
+	}, [publishableKey, reportError]);
 
 	useEffect(() => {
 		if (startedRef.current) return;

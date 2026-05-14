@@ -15,7 +15,6 @@
 	"dependencies": {
 		"@superbuilders/errors": "^3.0.2",
 		"@superbuilders/primer-tives": "^4.0.1",
-		"@t3-oss/env-core": "^0.13.11",
 		"clsx": "^2.1.1",
 		"react": "^19.2.6",
 		"react-dom": "^19.2.6",
