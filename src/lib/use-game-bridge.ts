@@ -1,13 +1,9 @@
+import { BRIDGE_VERSION, gameBridgeMessageSchema, hostInitMessageSchema } from "@shared/bridge";
+import { primerEnvSchema } from "@shared/primer";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-	BRIDGE_VERSION,
-	gameBridgeMessageSchema,
-	hostInitMessageSchema,
-} from "../../shared/bridge";
-import { primerEnvSchema } from "../../shared/primer";
-
-const env = primerEnvSchema.parse(import.meta.env);
+const { VITE_PRIMER_PUBLISHABLE_KEY } = primerEnvSchema.parse(import.meta.env);
+const GAME_DEV_ORIGIN = "http://localhost:5174";
 
 export type BridgeStatus = "loading" | "ready" | "started" | "complete" | "error";
 
@@ -19,19 +15,22 @@ export function useGameBridge() {
 	const sendHostInit = useCallback(() => {
 		const targetWindow = iframeRef.current?.contentWindow;
 		if (targetWindow === undefined || targetWindow === null) return;
+		const gameOrigin = getGameOrigin();
 
 		const message = hostInitMessageSchema.parse({
 			type: "host:init",
 			bridgeVersion: BRIDGE_VERSION,
-			primerPublishableKey: env.VITE_PRIMER_PUBLISHABLE_KEY,
+			primerPublishableKey: VITE_PRIMER_PUBLISHABLE_KEY,
 		});
 
-		targetWindow.postMessage(message, window.location.origin);
+		targetWindow.postMessage(message, gameOrigin);
 	}, []);
 
 	useEffect(() => {
+		const gameOrigin = getGameOrigin();
+
 		function onMessage(event: MessageEvent) {
-			if (event.origin !== window.location.origin) return;
+			if (event.origin !== gameOrigin) return;
 			if (event.source !== iframeRef.current?.contentWindow) return;
 			const parsed = gameBridgeMessageSchema.safeParse(event.data);
 
@@ -62,4 +61,8 @@ export function useGameBridge() {
 	}, [sendHostInit]);
 
 	return { iframeRef, status, error, onIframeLoad: sendHostInit };
+}
+
+function getGameOrigin() {
+	return import.meta.env.DEV ? GAME_DEV_ORIGIN : window.location.origin;
 }

@@ -1,24 +1,24 @@
+import { BRIDGE_VERSION, type GameBridgeMessage, hostInitMessageSchema } from "@shared/bridge";
+import { primerEnvSchema } from "@shared/primer";
 import { useEffect, useState } from "react";
 
-import {
-	BRIDGE_VERSION,
-	type GameBridgeMessage,
-	hostInitMessageSchema,
-} from "../../../shared/bridge";
-import { primerEnvSchema } from "../../../shared/primer";
+const IS_EMBEDDED = import.meta.env.VITE_IS_EMBEDDED === "true";
+const HOST_DEV_ORIGIN = "http://localhost:5173";
 
 export function useHostBridge() {
 	const [publishableKey, setPublishableKey] = useState<string | null>(null);
 
 	useEffect(() => {
-		if (window.parent === window) {
+		if (!IS_EMBEDDED) {
 			const env = primerEnvSchema.parse(import.meta.env);
 			setPublishableKey(env.VITE_PRIMER_PUBLISHABLE_KEY);
 			return;
 		}
 
+		const hostOrigin = getHostOrigin();
+
 		function onMessage(event: MessageEvent) {
-			if (event.origin !== window.location.origin) return;
+			if (event.origin !== hostOrigin) return;
 			if (event.source !== window.parent) return;
 			const { success, data } = hostInitMessageSchema.safeParse(event.data);
 
@@ -43,8 +43,12 @@ export function useHostBridge() {
 }
 
 function postGameMessage(message: GameBridgeMessage) {
-	if (window.parent === window) return;
-	window.parent.postMessage(message, window.location.origin);
+	if (!IS_EMBEDDED) return;
+	window.parent.postMessage(message, getHostOrigin());
+}
+
+function getHostOrigin() {
+	return import.meta.env.DEV ? HOST_DEV_ORIGIN : window.location.origin;
 }
 
 function gameError(error: string): GameBridgeMessage {

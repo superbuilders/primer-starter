@@ -2,9 +2,14 @@
 	"name": "primer-starter",
 	"version": "0.1.0",
 	"private": true,
+	"workspaces": [
+		"game"
+	],
 	"scripts": {
-		"dev": "vite",
-		"build": "vite build",
+		"dev": "concurrently -k -n host,game \"vite\" \"VITE_IS_EMBEDDED=true bun --cwd game dev --host 0.0.0.0 --port 5174\"",
+		"build": "VITE_IS_EMBEDDED=true bun --cwd game build && vite build",
+		"dev:standalone": "VITE_IS_EMBEDDED=false bun --cwd game dev --host 0.0.0.0 --port 5174",
+		"build:standalone": "VITE_IS_EMBEDDED=false bun --cwd game build",
 		"start": "vite preview",
 		"typecheck": "tsc --noEmit",
 		"lint": "biome check",
@@ -13,13 +18,8 @@
 		"prepare": "lefthook install"
 	},
 	"dependencies": {
-		"@superbuilders/errors": "^3.0.2",
-		"@superbuilders/primer-tives": "^4.0.1",
-		"clsx": "^2.1.1",
 		"react": "^19.2.6",
 		"react-dom": "^19.2.6",
-		"tailwind-merge": "^3.6.0",
-		"temml": "^0.13.2",
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
@@ -29,6 +29,7 @@
 		"@types/react": "^19.2.14",
 		"@types/react-dom": "^19.2.3",
 		"@vitejs/plugin-react": "^6.0.1",
+		"concurrently": "^9.2.1",
 		"lefthook": "^2.1.6",
 		"tailwindcss": "^4.3.0",
 		"typescript": "^6.0.3",
