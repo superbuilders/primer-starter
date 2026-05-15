@@ -1,123 +1,104 @@
 # Primer Starter
 
-A ready-to-go React app with the **Primer SDK** pre-wired. Drop in your publishable key, run two commands, and you have a working learning session you can hook into for games, scoring, progress tracking — anything.
+A Vite + React starter that runs Primer inside a separately buildable game. The root app hosts the game in an iframe and sends Primer config through a small `postMessage` bridge.
 
-The whole SDK is wrapped in one component:
+The repo supports two workflows:
 
-```tsx
-import { Primer } from "./components/primer";
+- Embedded mode: run the host app and game together. The host reads `.env` and sends the Primer publishable key through `host:init`.
+- Standalone mode: run or build only the game. The game reads `game/.env` directly and can be hosted as static files without the host bridge.
 
-export function App() {
-  return <Primer />;
-}
-```
+## Setup
 
-That's it. Sign-in, the lesson flow, correct/incorrect answers, errors — all handled.
-
----
-
-## 1. Connect your app to Primer!
-
-Before you start coding, you need to grab your secret key to connect the app so it actually works!
-
-**Step 1:** Open your code editor and find the file named `.env.example`.
-**Step 2:** Rename that file to just `.env`.
-**Step 3:** Open a web browser and go to exactly this URL:
-👉 **[https://primerlearn.dev/keys](https://primerlearn.dev/keys)** 👈
-**Step 4:** Sign in with your Google account if it asks you.
-**Step 5:** Copy your **Publishable Key** (it looks like a long password starting with `pk_`).
-**Step 6:** Go back to your `.env` file and replace `pk_replace_me` with the key you just copied.
-
-Your `.env` file should look exactly like this when you're done:
-```env
-VITE_PRIMER_PUBLISHABLE_KEY=pk_live_your_actual_key_here_that_you_copied
-```
-
-## 2. Run the code
-
-Open your terminal, make sure you are in the project folder, and run these two commands:
+Install dependencies from the repo root:
 
 ```bash
-# 1. Install all the packages (we use Bun!)
 bun install
+```
 
-# 2. Start your app
+For the embedded host workflow, copy the root env example:
+
+```bash
+cp .env.example .env
+```
+
+Set your Primer publishable key:
+
+```env
+VITE_PRIMER_PUBLISHABLE_KEY=pk_live_your_actual_key_here
+```
+
+You can get a publishable key from [https://primerlearn.dev/keys](https://primerlearn.dev/keys).
+
+## Embedded Development
+
+Run the host and game dev servers together:
+
+```bash
 bun dev
 ```
 
-Now, open **http://localhost:5173** in your browser. You should see "Sign in to Primer". Click it, sign in with Google, and you'll start a math lesson!
+Open [http://localhost:5173](http://localhost:5173). The host iframe loads the game dev server at `http://localhost:5174`, so both apps keep normal Vite HMR.
 
----
+## Embedded Build
 
-## 3. Hooking into the lesson
+Build the game into the host public directory, then build the host:
 
-Pass any of these callbacks to the `<Primer />` component to react to what the learner does. They're all **optional** — use only what you need.
-
-```tsx
-<Primer
-  onCorrect={(state)     => score += 10}
-  onIncorrect={(state)   => lives -= 1}
-  onComplete={()         => showWinScreen()}
-  onError={(err)         => showToast(err.message)}
-  onPhaseChange={(phase) => console.log("phase:", phase)}
-  onAuthenticated={()    => console.log("user signed in")}
-/>
+```bash
+bun run build
 ```
 
-| Callback          | Fires when                                    | Payload                                                                                              |
-| ----------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `onCorrect`       | The learner submits a **correct** answer      | The full `FeedbackState` (has `submission`, `feedbackContent`, `review`, `interaction`, etc.)        |
-| `onIncorrect`     | The learner submits a **wrong** answer        | Same `FeedbackState`, but `isCorrect === false`                                                      |
-| `onComplete`      | The lesson finishes                           | —                                                                                                    |
-| `onError`         | Anything fails (boot, auth, transition, fatal)| `Error`                                                                                              |
-| `onPhaseChange`   | Every phase transition                        | `"unauthenticated" \| "observation" \| "interaction" \| "feedback" \| "completed" \| "errored" \| "fatal"` |
-| `onAuthenticated` | The user signs in successfully                | —                                                                                                    |
+Embedded output flow:
 
-### Game integration example
-
-```tsx
-import { useState } from "react";
-import { Primer } from "./components/primer";
-
-export function MathGame() {
-  const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
-  const [done, setDone] = useState(false);
-
-  return (
-    <>
-      <header>Score: {score} • Lives: {lives}</header>
-
-      <Primer
-        onCorrect={() => setScore((s) => s + 10)}
-        onIncorrect={() => setLives((l) => l - 1)}
-        onComplete={() => setDone(true)}
-      />
-
-      {done && <WinScreen score={score} />}
-    </>
-  );
-}
+```txt
+game build -> public/game/ -> host build -> dist/game/
 ```
 
-The `Primer` component takes care of everything inside it — you just drive your own UI from the callbacks.
+The production host iframe loads `/game/index.html`.
 
----
+## Standalone Game
 
-## Deploying
+For game-only development, copy the game env example:
 
-This is a static Vite app — push it to **Vercel** (or any static host).
+```bash
+cp game/.env.example game/.env
+```
 
-- Build command: `bun run build`
-- Output directory: `dist`
-- Install command: `bun install`
-- Set the same `VITE_*` env vars in your host's environment settings.
+Then set `VITE_PRIMER_PUBLISHABLE_KEY` in `game/.env` and run:
+
+```bash
+bun run dev:standalone
+```
+
+Build standalone static output with:
+
+```bash
+bun run build:standalone
+```
+
+Standalone output goes to `game/dist/`. That bundle includes the game env publishable key and does not wait for the host bridge.
 
 ## Scripts
 
-| Command             | What it does            |
-| ------------------- | ----------------------- |
-| `bun dev`           | Start the dev server    |
-| `bun run build`     | Production build        |
-| `bun run typecheck` | TypeScript check        |
-| `bun run lint`      | Biome lint              |
+| Command | What it does |
+| --- | --- |
+| `bun dev` | Run embedded dev with host on 5173 and game on 5174 |
+| `bun run build` | Build embedded game output, then the host |
+| `bun run dev:standalone` | Run only the game with config from `game/.env` |
+| `bun run build:standalone` | Build only the standalone game into `game/dist/` |
+| `bun run typecheck` | TypeScript check |
+| `bun run lint` | Biome check |
+
+## Project Layout
+
+```txt
+src/                 host app
+game/                Primer game
+shared/              bridge and Primer config schemas shared by both apps
+public/game/         generated embedded game output
+game/dist/           generated standalone game output
+```
+
+The game uses `VITE_IS_EMBEDDED` to choose deployment behavior: 
+
+- Embedded mode waits for `host:init`
+- Standalone mode reads `game/.env`
