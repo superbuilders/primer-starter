@@ -3,10 +3,10 @@ import type { MatchPair, RendererMatchChoice } from "@superbuilders/primer-tives
 import { validateSubmissionForInteraction } from "@superbuilders/primer-tives/contracts";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 import { Inline } from "../content";
 import { Frame } from "../frame";
 import { Button } from "../ui/button";
-import { cn } from "../ui/cn";
 
 interface MatchInteractionProps {
 	state: MatchState;

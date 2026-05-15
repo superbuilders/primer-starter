@@ -1,10 +1,10 @@
 import type { OrderState } from "@superbuilders/primer-tives/client";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 import { Inline } from "../content";
 import { Frame } from "../frame";
 import { Button } from "../ui/button";
-import { cn } from "../ui/cn";
 
 interface OrderInteractionProps {
 	state: OrderState;

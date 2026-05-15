@@ -1,10 +1,10 @@
 import type { FeedbackState } from "@superbuilders/primer-tives/client";
+import { cn } from "@/lib/utils";
 
 import { Inline } from "./content";
 import { Frame } from "./frame";
 import { SubmissionView } from "./submission-view";
 import { Button } from "./ui/button";
-import { cn } from "./ui/cn";
 
 interface FeedbackFrameProps {
 	state: FeedbackState;

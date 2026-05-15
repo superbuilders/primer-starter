@@ -1,6 +1,6 @@
 import type { TextareaHTMLAttributes } from "react";
 
-import { cn } from "./cn";
+import { cn } from "@/lib/utils";
 
 type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement>;
 

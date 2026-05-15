@@ -1,7 +1,7 @@
 import type { ContentBlock, ContentInline } from "@superbuilders/primer-tives/contracts";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 import { Latex } from "./latex";
-import { cn } from "./ui/cn";
 
 export function renderInline(node: ContentInline, key: number): ReactNode {
 	switch (node.type) {

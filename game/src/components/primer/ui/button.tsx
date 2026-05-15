@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from "react";
 
-import { cn } from "./cn";
+import { cn } from "@/lib/utils";
 
 type Variant = "primary" | "outline" | "ghost" | "destructive";
 type Size = "sm" | "md";

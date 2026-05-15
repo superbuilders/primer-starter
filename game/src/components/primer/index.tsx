@@ -1,10 +1,11 @@
 import * as errors from "@superbuilders/errors";
 import {
 	type FeedbackState,
-	type PrimerOptions,
+	type PrimerOptionsWithManagedAuth,
 	type PrimerState,
+	type SignInFailedState,
+	type SignInRequiredState,
 	start,
-	type UnauthenticatedState,
 } from "@superbuilders/primer-tives/client";
 import type { FractionInputSubmission, MatchPair } from "@superbuilders/primer-tives/contracts";
 import {
@@ -41,6 +42,8 @@ type FractionPci = "urn:primer:pci:fraction-input";
 const PRIMER_ORIGIN = "https://primerlearn.dev";
 
 export type PrimerPhase = PrimerState<FractionPci>["phase"];
+
+type SignInState = SignInRequiredState<FractionPci> | SignInFailedState<FractionPci>;
 
 export interface PrimerProps {
 	publishableKey: string;
@@ -169,6 +172,23 @@ function classifyBootError(err: Error): SessionFailure {
 	};
 }
 
+function isSignInState(state: PrimerState<FractionPci> | null): state is SignInState {
+	return state?.phase === "sign-in-required" || state?.phase === "sign-in-failed";
+}
+
+function isSignInPhase(phase: PrimerPhase | null): phase is SignInState["phase"] {
+	return phase === "sign-in-required" || phase === "sign-in-failed";
+}
+
+function isRuntimeReadyPhase(phase: PrimerPhase): boolean {
+	return (
+		phase === "observation" ||
+		phase === "interaction" ||
+		phase === "feedback" ||
+		phase === "completed"
+	);
+}
+
 export function Primer(props: PrimerProps) {
 	const { publishableKey } = props;
 	const startedRef = useRef(false);
@@ -200,7 +220,7 @@ export function Primer(props: PrimerProps) {
 			subject: "math",
 			supportedPcis: ["urn:primer:pci:fraction-input"],
 			logger,
-		} satisfies PrimerOptions<"math", readonly [FractionPci]>;
+		} satisfies PrimerOptionsWithManagedAuth<"math", readonly [FractionPci]>;
 
 		const result = await errors.try(start(primerOptions));
 		if (result.error) {
@@ -247,12 +267,12 @@ export function Primer(props: PrimerProps) {
 	}, [state, run]);
 
 	const handleRetry = useCallback(() => {
-		if (state?.phase !== "errored") return;
+		if (state?.phase !== "errored" || !state.retriable) return;
 		run(() => state.retry());
 	}, [state, run]);
 
 	const handleLogin = useCallback(() => {
-		if (state?.phase !== "unauthenticated" || isPending) return;
+		if (!isSignInState(state) || isPending) return;
 		const nextState = state.login();
 		setIsPending(true);
 		nextState
@@ -300,7 +320,7 @@ export function Primer(props: PrimerProps) {
 		const cb = callbacksRef.current;
 		cb.onPhaseChange?.(state.phase);
 
-		if (prevPhase === "unauthenticated" && state.phase !== "unauthenticated") {
+		if (isSignInPhase(prevPhase) && isRuntimeReadyPhase(state.phase)) {
 			cb.onAuthenticated?.();
 		}
 
@@ -309,7 +329,12 @@ export function Primer(props: PrimerProps) {
 			else cb.onIncorrect?.(state);
 		} else if (state.phase === "completed") {
 			cb.onComplete?.();
-		} else if (state.phase === "errored" || state.phase === "fatal") {
+		} else if (
+			state.phase === "errored" ||
+			state.phase === "fatal" ||
+			state.phase === "auth-unavailable" ||
+			state.phase === "auth-config-invalid"
+		) {
 			cb.onError?.(state.error);
 		}
 	}, [state, activeInteractionState]);
@@ -355,8 +380,12 @@ export function Primer(props: PrimerProps) {
 	}
 
 	switch (state.phase) {
-		case "unauthenticated":
-			return <UnauthenticatedFrame state={state} onLogin={handleLogin} isPending={isPending} />;
+		case "sign-in-required":
+		case "sign-in-failed":
+			return <SignInFrame state={state} onLogin={handleLogin} isPending={isPending} />;
+		case "auth-unavailable":
+		case "auth-config-invalid":
+			return <AuthTerminalFrame state={state} />;
 		case "observation":
 			return <ObservationFrame state={state} onContinue={handleAdvance} isPending={isPending} />;
 		case "feedback":
@@ -450,16 +479,16 @@ export function Primer(props: PrimerProps) {
 	}
 }
 
-function UnauthenticatedFrame({
+function SignInFrame({
 	state,
 	onLogin,
 	isPending,
 }: {
-	state: UnauthenticatedState<FractionPci>;
+	state: SignInState;
 	onLogin: () => void;
 	isPending: boolean;
 }) {
-	const failure = classifyAuthState(state.error);
+	const failure = classifyAuthState(state.phase === "sign-in-failed" ? state.error : null);
 	return (
 		<section className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 px-4 py-16 text-center">
 			<h2 className="text-xl font-semibold tracking-tight">{failure.headline}</h2>
@@ -469,6 +498,16 @@ function UnauthenticatedFrame({
 					{isPending ? "Signing in…" : "Continue with Primer"}
 				</Button>
 			) : null}
+		</section>
+	);
+}
+
+function AuthTerminalFrame({ state }: { state: { error: Error } }) {
+	const failure = classifyAuthState(state.error);
+	return (
+		<section className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4 px-4 py-16 text-center">
+			<h2 className="text-xl font-semibold tracking-tight text-destructive">{failure.headline}</h2>
+			<p className="max-w-md text-sm text-muted-foreground">{failure.detail}</p>
 		</section>
 	);
 }

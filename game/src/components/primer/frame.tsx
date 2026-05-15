@@ -4,10 +4,10 @@ import type {
 	RendererStimulus,
 } from "@superbuilders/primer-tives/contracts";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 import { Blocks, Inline } from "./content";
 import { Stimulus } from "./stimulus";
-import { cn } from "./ui/cn";
 
 interface FrameProps {
 	body: ContentBlock[];

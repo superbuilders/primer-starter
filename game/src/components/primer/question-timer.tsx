@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { cn } from "./ui/cn";
+import { cn } from "@/lib/utils";
 
 interface QuestionTimerProps {
 	durationMs: number;

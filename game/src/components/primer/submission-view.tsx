@@ -5,9 +5,9 @@ import type {
 	RendererMatchChoice,
 	RendererSubmission,
 } from "@superbuilders/primer-tives/contracts";
+import { cn } from "@/lib/utils";
 
 import { Inline } from "./content";
-import { cn } from "./ui/cn";
 
 interface SubmissionViewProps {
 	interaction: RendererInteraction;

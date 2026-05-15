@@ -2,9 +2,9 @@ import type { PciInteractionState } from "@superbuilders/primer-tives/client";
 import type { FractionInputSubmission } from "@superbuilders/primer-tives/contracts";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import { Frame } from "../../frame";
 import { Button } from "../../ui/button";
-import { cn } from "../../ui/cn";
 
 type FractionInputState = PciInteractionState & {
 	pciId: "urn:primer:pci:fraction-input";
